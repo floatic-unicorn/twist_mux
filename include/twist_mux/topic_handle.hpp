@@ -180,7 +180,6 @@ public:
 
   bool isMasked(priority_type lock_priority) const
   {
-    // std::cout << hasExpired() << " / " << (getPriority() < lock_priority) << std::endl;
     return hasExpired() || (getPriority() < lock_priority);
   }
 
