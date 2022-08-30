@@ -48,11 +48,6 @@ install(
 #  DESTINATION lib/${PROJECT_NAME}
 #)
 
-foreach(dir launch config)
-  install(DIRECTORY ${dir}/
-    DESTINATION share/${PROJECT_NAME}/${dir})
-endforeach()
-
 install(
   DIRECTORY include/
   DESTINATION include
