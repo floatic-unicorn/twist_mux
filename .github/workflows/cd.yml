@@ -2,17 +2,17 @@ name: CD
 on: 
   pull_request:
     branches: [ main ]
+    type: [closed]
 
 jobs:
   ecr_setting:
-    # if: contains(github.event.comment.html_url, '/pull/') && contains(github.event.comment.body, '/deploy')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
 
       - name: AWS Mfa login
-        uses: ./.github/actions/aws-mfa-login
+        uses: floatic-unicorn/floatic-github-actions/aws-mfa-login@main
         with:
           access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -21,14 +21,12 @@ jobs:
         
       - id: get_ecr_password
         name: Get ECR password
-        run: |
-          PROIFLE_REGION=$(aws configure get region --profile mfa)
-          ECR_PASSWORD=$(aws ecr get-login-password --region $PROIFLE_REGION --profile mfa)
-          echo "ECR_PASSWORD=$ECR_PASSWORD" >> $GITHUB_OUTPUT
+        uses: floatic-unicorn/floatic-github-actions/aws-ecr-password@main
+          
     outputs:
-      ecr_password: ${{ steps.get_ecr_password.outputs.ECR_PASSWORD }}
+      ecr_password: ${{ steps.get_ecr_password.outputs.ecr_password }}
 
-  build_debian:
+  debian_build:
     needs: ecr_setting
     runs-on: ubuntu-latest
     container:
@@ -39,24 +37,22 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          path: 'iot_ws/iot/'
+          path: 'flody_ws/etc/'
 
       - name: Checkout submodules
         run: |
-          cd iot_ws/iot
+          cd flody_ws/etc
           git submodule update --init --recursive
       - name: Generate debian file
         run: |
           source /opt/floatic/debian/humble/setup.bash
-          rosdep update
-          cd iot_ws/iot
+          cd flody_ws/etc
           floom-generate rosdebian
-          sudo fakeroot debian/rules binary
-          ls ../*.deb
+          ls debian_results/*.deb
         shell: bash
   
       - name: AWS Mfa login
-        uses: ./iot_ws/iot/.github/actions/aws-mfa-login
+        uses: floatic-unicorn/floatic-github-actions/aws-mfa-login@main
         with:
           access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -65,4 +61,4 @@ jobs:
       
       - name: Upload to S3
         run: |
-          aws s3 cp $(ls iot_ws/*.deb) s3://robotics-workflow-archive/twist_mux/
+          aws s3 cp $(ls flody_ws/etc/debian_results/*.deb) s3://robotics-workflow-archive/twist_mux/
