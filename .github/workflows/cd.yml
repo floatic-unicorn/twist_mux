@@ -1,0 +1,64 @@
+name: CD
+on: 
+  pull_request:
+    branches: [ main ]
+    type: [closed]
+
+jobs:
+  ecr_setting:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: AWS Mfa login
+        uses: floatic-unicorn/floatic-github-actions/aws-mfa-login@main
+        with:
+          access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          mfa_key: ${{ secrets.MFA_KEY }}
+          mfa_arn: ${{ secrets.MFA_ARN }}
+        
+      - id: get_ecr_password
+        name: Get ECR password
+        uses: floatic-unicorn/floatic-github-actions/aws-ecr-password@main
+          
+    outputs:
+      ecr_password: ${{ steps.get_ecr_password.outputs.ecr_password }}
+
+  debian_build:
+    needs: ecr_setting
+    runs-on: ubuntu-latest
+    container:
+      image: 557571393534.dkr.ecr.ap-northeast-2.amazonaws.com/floom
+      credentials:
+        username: AWS
+        password: ${{ needs.ecr_setting.outputs.ecr_password }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          path: 'flody_ws/etc/'
+
+      - name: Checkout submodules
+        run: |
+          cd flody_ws/etc
+          git submodule update --init --recursive
+      - name: Generate debian file
+        run: |
+          source /opt/floatic/debian/humble/setup.bash
+          cd flody_ws/etc
+          floom-generate rosdebian
+          ls debian_results/*.deb
+        shell: bash
+  
+      - name: AWS Mfa login
+        uses: floatic-unicorn/floatic-github-actions/aws-mfa-login@main
+        with:
+          access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          mfa_key: ${{ secrets.MFA_KEY }}
+          mfa_arn: ${{ secrets.MFA_ARN }}
+      
+      - name: Upload to S3
+        run: |
+          aws s3 cp $(ls flody_ws/etc/debian_results/*.deb) s3://robotics-workflow-archive/twist_mux/
