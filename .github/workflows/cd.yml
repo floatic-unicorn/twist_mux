@@ -1,7 +1,7 @@
 name: CD
 on: 
   pull_request:
-    branches: [ main ]
+    branches: [ feature/fix_lock_check ]
 
 jobs:
   ecr_setting:
