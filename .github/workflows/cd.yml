@@ -11,7 +11,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: AWS Mfa login
-        uses: floatic-unicorn/floatic-github-actions/aws-mfa-login@main
+        uses: ./.github/actions/aws-mfa-login
         with:
           access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -20,7 +20,7 @@ jobs:
         
       - id: get_ecr_password
         name: Get ECR password
-        uses: floatic-unicorn/floatic-github-actions/aws-ecr-password@main
+        uses: floatic-unicorn/floatic-github-actions/aws-ecr-password@v1
           
     outputs:
       ecr_password: ${{ steps.get_ecr_password.outputs.ecr_password }}
@@ -51,7 +51,7 @@ jobs:
         shell: bash
   
       - name: AWS Mfa login
-        uses: floatic-unicorn/floatic-github-actions/aws-mfa-login@main
+        uses: ./flody_ws/etc/.github/actions/aws-mfa-login
         with:
           access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
