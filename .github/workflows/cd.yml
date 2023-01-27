@@ -5,6 +5,7 @@ on:
 
 jobs:
   ecr_setting:
+    # if: contains(github.event.comment.html_url, '/pull/') && contains(github.event.comment.body, '/deploy')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -20,10 +21,12 @@ jobs:
         
       - id: get_ecr_password
         name: Get ECR password
-        uses: floatic-unicorn/floatic-github-actions/aws-ecr-password@v1
-          
+        run: |
+          PROIFLE_REGION=$(aws configure get region --profile mfa)
+          ECR_PASSWORD=$(aws ecr get-login-password --region $PROIFLE_REGION --profile mfa)
+          echo "ECR_PASSWORD=$ECR_PASSWORD" >> $GITHUB_OUTPUT
     outputs:
-      ecr_password: ${{ steps.get_ecr_password.outputs.ecr_password }}
+      ecr_password: ${{ steps.get_ecr_password.outputs.ECR_PASSWORD }}
 
   debian_build:
     needs: ecr_setting
