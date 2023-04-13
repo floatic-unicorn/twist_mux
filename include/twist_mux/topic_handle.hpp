@@ -180,7 +180,6 @@ public:
 
   bool isMasked(priority_type lock_priority) const
   {
-    // std::cout << hasExpired() << " / " << (getPriority() < lock_priority) << std::endl;
     return hasExpired() || (getPriority() < lock_priority);
   }
 
@@ -218,15 +217,19 @@ public:
     subscriber_ = mux_->create_subscription<std_msgs::msg::Bool>(
       topic_, rclcpp::SystemDefaultsQoS(),
       std::bind(&LockTopicHandle::callback, this, std::placeholders::_1));
+    // default msg_:=false
+    std_msgs::msg::Bool msg = std_msgs::msg::Bool();
+    msg.data = false; 
+    msg_ = msg; 
   }
 
   /**
    * @brief isLocked
-   * @return true if has expired or locked (i.e. bool message data is true)
+   * @return true if locked (i.e. bool message data is true)
    */
   bool isLocked() const
   {
-    return hasExpired() || getMessage().data;
+    return getMessage().data;
   }
 
   void callback(const std_msgs::msg::Bool::ConstSharedPtr msg)

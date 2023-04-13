@@ -1,8 +1,8 @@
 name: CD
-on: 
-  pull_request:
-    branches: [ main ]
-    types: [ closed ]
+on:
+  push:
+    tags:
+      - v*
 
 jobs:
   ecr_setting:
@@ -23,8 +23,8 @@ jobs:
       - id: get_ecr_password
         name: Get ECR password
         run: |
-          PROIFLE_REGION=$(aws configure get region --profile mfa)
-          ECR_PASSWORD=$(aws ecr get-login-password --region $PROIFLE_REGION --profile mfa)
+          PROIFLE_REGION=$(aws configure get region)
+          ECR_PASSWORD=$(aws ecr get-login-password --region $PROIFLE_REGION)
           echo "ECR_PASSWORD=$ECR_PASSWORD" >> $GITHUB_OUTPUT
     outputs:
       ecr_password: ${{ steps.get_ecr_password.outputs.ECR_PASSWORD }}
@@ -38,31 +38,38 @@ jobs:
         username: AWS
         password: ${{ needs.ecr_setting.outputs.ecr_password }}
     steps:
+      - name: Update dist
+        run: sudo apt update
+
       - uses: actions/checkout@v3
         with:
-          path: 'flody_ws/twist_mux/'
-
-      - name: Checkout submodules
-        run: |
-          cd flody_ws/twist_mux
-          git submodule update --init --recursive
-      - name: Generate debian file
-        run: |
-          source /opt/floatic/debian/humble/setup.bash
-          rosdep update
-          cd flody_ws/twist_mux
-          floom-generate rosdebian
-          sudo fakeroot debian/rules binary
-          ls ../*.deb
-        shell: bash
-  
+          path: 'flody_ws/etc/'
+      
       - name: AWS Mfa login
-        uses: ./flody_ws/twist_mux/.github/actions/aws-mfa-login
+        uses: ./flody_ws/etc/.github/actions/aws-mfa-login
         with:
           access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           mfa_key: ${{ secrets.MFA_KEY }}
           mfa_arn: ${{ secrets.MFA_ARN }}
+
+      - name: PPA server access
+        uses: ./flody_ws/etc/.github/actions/floatic-ppa-access
+        with:
+          target_group_name: ${{ secrets.SECURITY_GROUP_NAME }}
+
+      - name: Checkout submodules
+        run: |
+          cd flody_ws/etc
+          git submodule update --init --recursive
+      
+      - name: Generate debian file
+        run: |
+          source /opt/floatic/debian/ros/humble/setup.bash
+          cd flody_ws/etc
+          floom-generate rosdebian
+          ls ../*.deb
+        shell: bash
       
       - name: Upload to S3
         run: |

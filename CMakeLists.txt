@@ -35,13 +35,8 @@ add_executable(twist_mux
 )
 ament_target_dependencies(twist_mux ${DEPENDENCIES})
 
-add_executable(twist_marker
-  src/twist_marker.cpp
-)
-ament_target_dependencies(twist_marker ${DEPENDENCIES})
-
 install(
-  TARGETS twist_mux twist_marker
+  TARGETS twist_mux 
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
@@ -52,11 +47,6 @@ install(
 #  PROGRAMS scripts/joystick_relay.py
 #  DESTINATION lib/${PROJECT_NAME}
 #)
-
-foreach(dir launch config)
-  install(DIRECTORY ${dir}/
-    DESTINATION share/${PROJECT_NAME}/${dir})
-endforeach()
 
 install(
   DIRECTORY include/
