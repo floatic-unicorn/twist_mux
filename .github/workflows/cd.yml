@@ -23,22 +23,13 @@ jobs:
       - id: get_ecr_password
         name: Get ECR password
         run: |
-<<<<<<< HEAD
           PROIFLE_REGION=$(aws configure get region)
           ECR_PASSWORD=$(aws ecr get-login-password --region $PROIFLE_REGION)
-=======
-          PROIFLE_REGION=$(aws configure get region --profile mfa)
-          ECR_PASSWORD=$(aws ecr get-login-password --region $PROIFLE_REGION --profile mfa)
->>>>>>> humble
           echo "ECR_PASSWORD=$ECR_PASSWORD" >> $GITHUB_OUTPUT
     outputs:
       ecr_password: ${{ steps.get_ecr_password.outputs.ECR_PASSWORD }}
 
-<<<<<<< HEAD
-  debian_build:
-=======
   build_debian:
->>>>>>> humble
     needs: ecr_setting
     runs-on: ubuntu-latest
     container:
@@ -47,7 +38,6 @@ jobs:
         username: AWS
         password: ${{ needs.ecr_setting.outputs.ecr_password }}
     steps:
-<<<<<<< HEAD
       - name: Update dist
         run: sudo apt update
 
@@ -57,34 +47,11 @@ jobs:
       
       - name: AWS Mfa login
         uses: ./flody_ws/etc/.github/actions/aws-mfa-login
-=======
-      - uses: actions/checkout@v3
-        with:
-          path: 'flody_ws/twist_mux/'
-
-      - name: Checkout submodules
-        run: |
-          cd flody_ws/twist_mux
-          git submodule update --init --recursive
-      - name: Generate debian file
-        run: |
-          source /opt/floatic/debian/humble/setup.bash
-          rosdep update
-          cd flody_ws/twist_mux
-          floom-generate rosdebian
-          sudo fakeroot debian/rules binary
-          ls ../*.deb
-        shell: bash
-  
-      - name: AWS Mfa login
-        uses: ./flody_ws/twist_mux/.github/actions/aws-mfa-login
->>>>>>> humble
         with:
           access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           mfa_key: ${{ secrets.MFA_KEY }}
           mfa_arn: ${{ secrets.MFA_ARN }}
-<<<<<<< HEAD
 
       - name: PPA server access
         uses: ./flody_ws/etc/.github/actions/floatic-ppa-access
@@ -103,8 +70,6 @@ jobs:
           floom-generate rosdebian
           ls ../*.deb
         shell: bash
-=======
->>>>>>> humble
       
       - name: Upload to S3
         run: |
